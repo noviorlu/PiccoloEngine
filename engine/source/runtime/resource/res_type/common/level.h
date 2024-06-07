@@ -1,11 +1,9 @@
 #pragma once
 #include "runtime/core/meta/reflection/reflection.h"
 
-#include "runtime/core/math/vector3.h"
-
 #include "runtime/resource/res_type/common/object.h"
 
-namespace Piccolo
+namespace Pilot
 {
     REFLECTION_TYPE(LevelRes)
     CLASS(LevelRes, Fields)
@@ -13,9 +11,9 @@ namespace Piccolo
         REFLECTION_BODY(LevelRes);
 
     public:
-        Vector3     m_gravity {0.f, 0.f, -9.8f};
-        std::string m_character_name;
+        float m_gravity {9.8f};
+        int   m_character_index {0};
 
         std::vector<ObjectInstanceRes> m_objects;
     };
-} // namespace Piccolo
+} // namespace Pilot

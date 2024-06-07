@@ -4,28 +4,23 @@
 #include "runtime/function/framework/component/component.h"
 #include "runtime/resource/res_type/components/animation.h"
 
-namespace Piccolo
+namespace Pilot
 {
     REFLECTION_TYPE(AnimationComponent)
     CLASS(AnimationComponent : public Component, WhiteListFields)
     {
         REFLECTION_BODY(AnimationComponent)
 
+        Skeleton m_skeleton;
+        META(Enable)
+        AnimationComponentRes m_animation_res;
+
     public:
         AnimationComponent() = default;
-
-        void postLoadResource(std::weak_ptr<GObject> parent_object) override;
+        AnimationComponent(const AnimationComponentRes& animation_res, GObject* parent_object);
 
         void tick(float delta_time) override;
 
         const AnimationResult& getResult() const;
-
-        const Skeleton& getSkeleton() const;
-
-    protected:
-        META(Enable)
-        AnimationComponentRes m_animation_res;
-
-        Skeleton m_skeleton;
     };
-} // namespace Piccolo
+} // namespace Pilot

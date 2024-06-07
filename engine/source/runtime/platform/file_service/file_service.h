@@ -1,13 +1,20 @@
 #pragma once
 
+#include "runtime/core/base/public_singleton.h"
+
 #include <filesystem>
 #include <vector>
 
-namespace Piccolo
+namespace Pilot
 {
-    class FileSystem 
+    class FileService : public PublicSingleton<FileService>
     {
+        friend class PublicSingleton<FileService>;
+
     public:
         std::vector<std::filesystem::path> getFiles(const std::filesystem::path& directory);
+
+    protected:
+        FileService() = default;
     };
-} // namespace Piccolo
+} // namespace Pilot

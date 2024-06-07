@@ -2,7 +2,7 @@
 
 #include "runtime/function/animation/node.h"
 
-namespace Piccolo
+namespace Pilot
 {
     Bone* find_by_index(Bone* bones, int key, int size, bool is_flat)
     {
@@ -43,7 +43,7 @@ namespace Piccolo
         return nullptr;
     }
 
-    int find_index_by_name(const SkeletonData& skeleton, const std::string& name)
+    int find_index_by_name(const SkeletonData& skeleton, std::string name)
     {
         const auto it = std::find_if(
             skeleton.bones_map.begin(), skeleton.bones_map.end(), [&](const auto& i) { return i.name == name; });
@@ -51,4 +51,4 @@ namespace Piccolo
             return it->index;
         return std::numeric_limits<int>::max();
     }
-} // namespace Piccolo
+} // namespace Pilot

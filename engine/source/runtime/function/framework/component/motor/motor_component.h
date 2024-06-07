@@ -5,7 +5,7 @@
 #include "runtime/function/controller/character_controller.h"
 #include "runtime/function/framework/component/component.h"
 
-namespace Piccolo
+namespace Pilot
 {
     enum class MotorState : unsigned char
     {
@@ -21,13 +21,12 @@ namespace Piccolo
     };
 
     REFLECTION_TYPE(MotorComponent)
-    CLASS(MotorComponent : public Component, WhiteListFields,WhiteListMethods)
+    CLASS(MotorComponent : public Component, WhiteListFields)
     {
         REFLECTION_BODY(MotorComponent)
     public:
-        MotorComponent() = default;
-
-        void postLoadResource(std::weak_ptr<GObject> parent_object) override;
+        MotorComponent() {}
+        MotorComponent(const MotorComponentRes& motor_res, GObject* parent_object);
 
         ~MotorComponent() override;
 
@@ -38,9 +37,6 @@ namespace Piccolo
 
         float getSpeedRatio() const { return m_move_speed_ratio; }
         bool  getIsMoving() const { return m_is_moving; }
-
-        META(Enable)
-        void getOffStuckDead();
 
     private:
         void calculatedDesiredHorizontalMoveSpeed(unsigned int command, float delta_time);
@@ -64,10 +60,8 @@ namespace Piccolo
         MotorState m_motor_state {MotorState::moving};
         JumpState  m_jump_state {JumpState::idle};
 
-        ControllerType m_controller_type {ControllerType::none};
-        Controller*    m_controller {nullptr};
+        Controller* m_controller {nullptr};
 
-        META(Enable)
         bool m_is_moving {false};
     };
-} // namespace Piccolo
+} // namespace Pilot

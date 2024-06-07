@@ -6,10 +6,8 @@
 
 #include "runtime/function/framework/component/component.h"
 
-namespace Piccolo
+namespace Pilot
 {
-    class RenderCamera;
-
     enum class CameraMode : unsigned char
     {
         third_person,
@@ -22,33 +20,25 @@ namespace Piccolo
     CLASS(CameraComponent : public Component, WhiteListFields)
     {
         REFLECTION_BODY(CameraComponent)
-
-    public:
-        CameraComponent() = default;
-
-        void postLoadResource(std::weak_ptr<GObject> parent_object) override;
-
-        void tick(float delta_time) override;
-
-        CameraMode getCameraMode() const { return m_camera_mode; }
-        void setCameraMode(CameraMode mode) { m_camera_mode = mode; }
-        Vector3 getPosition() const { return m_position; }
-        Vector3 getForward() const { return m_forward; }
-
-    private:
-        void tickFirstPersonCamera(float delta_time);
-        void tickThirdPersonCamera(float delta_time);
-        void tickFreeCamera(float delta_time);
-
+    protected:
         META(Enable)
         CameraComponentRes m_camera_res;
 
         CameraMode m_camera_mode {CameraMode::invalid};
 
-        Vector3 m_position;
-
-        Vector3 m_forward {Vector3::NEGATIVE_UNIT_Y};
+        Vector3 m_foward {Vector3::NEGATIVE_UNIT_Y};
         Vector3 m_up {Vector3::UNIT_Z};
         Vector3 m_left {Vector3::UNIT_X};
+
+    public:
+        CameraComponent() {}
+        CameraComponent(const CameraComponentRes& camera_param, GObject* parent_object);
+
+        void tick(float delta_time) override;
+
+    private:
+        void tickFirstPersonCamera(float delta_time);
+        void tickThirdPersonCamera(float delta_time);
+        void tickFreeCamera();
     };
-} // namespace Piccolo
+} // namespace Pilot

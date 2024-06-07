@@ -1,14 +1,11 @@
 #pragma once
 #include "runtime/core/meta/reflection/reflection.h"
 
-
+#include "runtime/core/math/transform.h"
 #include <string>
 #include <vector>
-
-namespace Piccolo
+namespace Pilot
 {
-    class Component;
-
     REFLECTION_TYPE(ComponentDefinitionRes)
     CLASS(ComponentDefinitionRes, Fields)
     {
@@ -25,7 +22,7 @@ namespace Piccolo
         REFLECTION_BODY(ObjectDefinitionRes);
 
     public:
-        std::vector<Reflection::ReflectionPtr<Component>> m_components;
+        std::vector<std::string> m_components;
     };
 
     REFLECTION_TYPE(ObjectInstanceRes)
@@ -35,8 +32,8 @@ namespace Piccolo
 
     public:
         std::string              m_name;
+        Transform                m_transform;
         std::string              m_definition;
-
-        std::vector<Reflection::ReflectionPtr<Component>> m_instanced_components;
+        std::vector<std::string> m_instance_components;
     };
-} // namespace Piccolo
+} // namespace Pilot

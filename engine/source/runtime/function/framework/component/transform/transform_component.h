@@ -6,17 +6,25 @@
 #include "runtime/function/framework/component/component.h"
 #include "runtime/function/framework/object/object.h"
 
-namespace Piccolo
+namespace Pilot
 {
     REFLECTION_TYPE(TransformComponent)
     CLASS(TransformComponent : public Component, WhiteListFields)
     {
         REFLECTION_BODY(TransformComponent)
+    protected:
+        META(Enable)
+        Transform m_transform;
+
+        Transform m_transform_buffer[2];
+        size_t    m_current_index {0};
+        size_t    m_next_index {1};
 
     public:
-        TransformComponent() = default;
+        TransformComponent() {}
+        TransformComponent(const Transform& transform, GObject* parent_gobject);
 
-        void postLoadResource(std::weak_ptr<GObject> parent_object) override;
+        ~TransformComponent() override {}
 
         Vector3    getPosition() const { return m_transform_buffer[m_current_index].m_position; }
         Vector3    getScale() const { return m_transform_buffer[m_current_index].m_scale; }
@@ -36,13 +44,5 @@ namespace Piccolo
         void tick(float delta_time) override;
 
         void tryUpdateRigidBodyComponent();
-
-    protected:
-        META(Enable)
-        Transform m_transform;
-
-        Transform m_transform_buffer[2];
-        size_t    m_current_index {0};
-        size_t    m_next_index {1};
     };
-} // namespace Piccolo
+} // namespace Pilot

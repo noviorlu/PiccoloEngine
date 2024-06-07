@@ -1,20 +1,20 @@
 #pragma once
 
+#include "runtime/core/base/public_singleton.h"
 #include "runtime/resource/res_type/common/world.h"
 
 #include <filesystem>
 #include <string>
 
-namespace Piccolo
+namespace Pilot
 {
+    class PWorldT;
     class Level;
-    class LevelDebugger;
-    class PhysicsScene;
 
-    /// Manage all game worlds, it should be support multiple worlds, including game world and editor world.
-    /// Currently, the implement just supports one active world and one active level
-    class WorldManager
+    class WorldManager : public PublicSingleton<WorldManager>
     {
+        friend class PublicSingleton<WorldManager>;
+
     public:
         virtual ~WorldManager();
 
@@ -23,26 +23,26 @@ namespace Piccolo
 
         void reloadCurrentLevel();
         void saveCurrentLevel();
+        void loadAsCurrentWorld(const std::string& world_url);
+        void loadAsCurrentLevel(const std::string& level_url);
 
-        void                 tick(float delta_time);
-        std::weak_ptr<Level> getCurrentActiveLevel() const { return m_current_active_level; }
+        void   tick(float delta_time);
+        Level* getCurrentActiveLevel() const { return m_current_active_level; }
 
-        std::weak_ptr<PhysicsScene> getCurrentActivePhysicsScene() const;
+    protected:
+        WorldManager() = default;
 
     private:
-        bool loadWorld(const std::string& world_url);
-        bool loadLevel(const std::string& level_url);
+        void processPendingLoadWorld();
+        void loadWorld(const std::string& world_url);
+        void loadLevel(const std::string& level_url);
 
-        bool                      m_is_world_loaded {false};
-        std::string               m_current_world_url;
-        std::shared_ptr<WorldRes> m_current_world_resource;
+        std::string m_pending_load_world_url;
+        std::string m_pending_load_level_url;
+        std::string m_current_world_url;
+        std::string m_current_level_url;
 
-        // all loaded levels, key: level url, vaule: level instance
-        std::unordered_map<std::string, std::shared_ptr<Level>> m_loaded_levels;
-        // active level, currently we just support one active level
-        std::weak_ptr<Level> m_current_active_level;
-
-        //debug level
-        std::shared_ptr<LevelDebugger> m_level_debugger;
+        std::vector<Level*> m_levels;
+        Level*              m_current_active_level {nullptr};
     };
-} // namespace Piccolo
+} // namespace Pilot

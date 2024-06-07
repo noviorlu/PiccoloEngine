@@ -4,31 +4,29 @@
 
 #include "runtime/resource/res_type/components/mesh.h"
 
-#include "runtime/function/render/render_object.h"
-
 #include <vector>
 
-namespace Piccolo
-{
-    class RenderSwapContext;
+// TODO PGameObjectComponentDesc should be converted to StaticMeshData
+#include "runtime/function/scene/scene_object.h"
 
+namespace Pilot
+{
     REFLECTION_TYPE(MeshComponent)
     CLASS(MeshComponent : public Component, WhiteListFields)
     {
         REFLECTION_BODY(MeshComponent)
-    public:
-        MeshComponent() {};
-
-        void postLoadResource(std::weak_ptr<GObject> parent_object) override;
-
-        const std::vector<GameObjectPartDesc>& getRawMeshes() const { return m_raw_meshes; }
-
-        void tick(float delta_time) override;
-
     private:
         META(Enable)
         MeshComponentRes m_mesh_res;
 
-        std::vector<GameObjectPartDesc> m_raw_meshes;
+        std::vector<GameObjectComponentDesc> m_raw_meshes;
+
+    public:
+        MeshComponent() {};
+        MeshComponent(const MeshComponentRes& mesh_ast, GObject* parent_object);
+
+        const std::vector<GameObjectComponentDesc>& getRawMeshes() const { return m_raw_meshes; }
+
+        void tick(float delta_time) override;
     };
-} // namespace Piccolo
+} // namespace Pilot

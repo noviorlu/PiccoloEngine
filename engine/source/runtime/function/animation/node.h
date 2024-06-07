@@ -5,7 +5,7 @@
 
 #include "runtime/resource/res_type/data/skeleton_data.h"
 
-namespace Piccolo
+namespace Pilot
 {
     class Node
     {
@@ -113,4 +113,4 @@ namespace Piccolo
 
         size_t getID(void) const;
     };
-} // namespace Piccolo
+} // namespace Pilot

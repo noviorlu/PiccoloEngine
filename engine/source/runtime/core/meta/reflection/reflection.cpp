@@ -2,27 +2,23 @@
 #include <cstring>
 #include <map>
 
-namespace Piccolo
+namespace Pilot
 {
     namespace Reflection
     {
         const char* k_unknown_type = "UnknownType";
         const char* k_unknown      = "Unknown";
 
-        static std::map<std::string, ClassFunctionTuple*>       m_class_map;
-        static std::multimap<std::string, FieldFunctionTuple*>  m_field_map;
-        static std::multimap<std::string, MethodFunctionTuple*> m_method_map;
-        static std::map<std::string, ArrayFunctionTuple*>       m_array_map;
+        static std::map<std::string, class_function_tuple*>      m_class_map;
+        static std::multimap<std::string, filed_function_tuple*> m_field_map;
+        static std::map<std::string, array_function_tuple*>      m_array_map;
 
-        void TypeMetaRegisterinterface::registerToFieldMap(const char* name, FieldFunctionTuple* value)
+        void TypeMetaRegisterinterface::registerToFieldMap(const char* name, filed_function_tuple* value)
         {
             m_field_map.insert(std::make_pair(name, value));
         }
-        void TypeMetaRegisterinterface::registerToMethodMap(const char* name, MethodFunctionTuple* value)
-        {
-            m_method_map.insert(std::make_pair(name, value));
-        }
-        void TypeMetaRegisterinterface::registerToArrayMap(const char* name, ArrayFunctionTuple* value)
+
+        void TypeMetaRegisterinterface::registerToArrayMap(const char* name, array_function_tuple* value)
         {
             if (m_array_map.find(name) == m_array_map.end())
             {
@@ -34,7 +30,7 @@ namespace Piccolo
             }
         }
 
-        void TypeMetaRegisterinterface::registerToClassMap(const char* name, ClassFunctionTuple* value)
+        void TypeMetaRegisterinterface::registerToClassMap(const char* name, class_function_tuple* value)
         {
             if (m_class_map.find(name) == m_class_map.end())
             {
@@ -69,7 +65,6 @@ namespace Piccolo
         {
             m_is_valid = false;
             m_fields.clear();
-            m_methods.clear();
 
             auto fileds_iter = m_field_map.equal_range(type_name);
             while (fileds_iter.first != fileds_iter.second)
@@ -80,19 +75,9 @@ namespace Piccolo
 
                 ++fileds_iter.first;
             }
-
-            auto methods_iter = m_method_map.equal_range(type_name);
-            while (methods_iter.first != methods_iter.second)
-            {
-                MethodAccessor f_method(methods_iter.first->second);
-                m_methods.emplace_back(f_method);
-                m_is_valid = true;
-
-                ++methods_iter.first;
-            }
         }
 
-        TypeMeta::TypeMeta() : m_type_name(k_unknown_type), m_is_valid(false) { m_fields.clear(); m_methods.clear(); }
+        TypeMeta::TypeMeta() : m_type_name(k_unknown_type), m_is_valid(false) { m_fields.clear(); }
 
         TypeMeta TypeMeta::newMetaFromName(std::string type_name)
         {
@@ -114,7 +99,7 @@ namespace Piccolo
             return false;
         }
 
-        ReflectionInstance TypeMeta::newFromNameAndJson(std::string type_name, const Json& json_context)
+        ReflectionInstance TypeMeta::newFromNameAndPJson(std::string type_name, const PJson& json_context)
         {
             auto iter = m_class_map.find(type_name);
 
@@ -125,7 +110,7 @@ namespace Piccolo
             return ReflectionInstance();
         }
 
-        Json TypeMeta::writeByName(std::string type_name, void* instance)
+        PJson TypeMeta::writeByName(std::string type_name, void* instance)
         {
             auto iter = m_class_map.find(type_name);
 
@@ -133,7 +118,7 @@ namespace Piccolo
             {
                 return std::get<2>(*iter->second)(instance);
             }
-            return Json();
+            return PJson();
         }
 
         std::string TypeMeta::getTypeName() { return m_type_name; }
@@ -145,17 +130,6 @@ namespace Piccolo
             for (int i = 0; i < count; ++i)
             {
                 out_list[i] = m_fields[i];
-            }
-            return count;
-        }
-
-        int TypeMeta::getMethodsList(MethodAccessor*& out_list)
-        {
-            int count = m_methods.size();
-            out_list  = new MethodAccessor[count];
-            for (int i = 0; i < count; ++i)
-            {
-                out_list[i] = m_methods[i];
             }
             return count;
         }
@@ -182,16 +156,6 @@ namespace Piccolo
             return FieldAccessor(nullptr);
         }
 
-        MethodAccessor TypeMeta::getMethodByName(const char* name)
-        {
-            const auto it = std::find_if(m_methods.begin(), m_methods.end(), [&](const auto& i) {
-                return std::strcmp(i.getMethodName(), name) == 0;
-            });
-            if (it != m_methods.end())
-                return *it;
-            return MethodAccessor(nullptr);
-        }
-
         TypeMeta& TypeMeta::operator=(const TypeMeta& dest)
         {
             if (this == &dest)
@@ -200,10 +164,6 @@ namespace Piccolo
             }
             m_fields.clear();
             m_fields = dest.m_fields;
-
-            
-            m_methods.clear();
-            m_methods = dest.m_methods;
 
             m_type_name = dest.m_type_name;
             m_is_valid  = dest.m_is_valid;
@@ -217,7 +177,7 @@ namespace Piccolo
             m_functions       = nullptr;
         }
 
-        FieldAccessor::FieldAccessor(FieldFunctionTuple* functions) : m_functions(functions)
+        FieldAccessor::FieldAccessor(filed_function_tuple* functions) : m_functions(functions)
         {
             m_field_type_name = k_unknown_type;
             m_field_name      = k_unknown;
@@ -277,41 +237,11 @@ namespace Piccolo
             return *this;
         }
 
-        MethodAccessor::MethodAccessor()
-        {
-            m_method_name = k_unknown;
-            m_functions   = nullptr;
-        }
-
-        MethodAccessor::MethodAccessor(MethodFunctionTuple* functions) : m_functions(functions)
-        {
-            m_method_name      = k_unknown;
-            if (m_functions == nullptr)
-            {
-                return;
-            }
-
-            m_method_name      = (std::get<0>(*m_functions))();
-        }
-        const char* MethodAccessor::getMethodName() const{
-            return (std::get<0>(*m_functions))();
-        }
-        MethodAccessor& MethodAccessor::operator=(const MethodAccessor& dest)
-        {
-            if (this == &dest)
-            {
-                return *this;
-            }
-            m_functions       = dest.m_functions;
-            m_method_name      = dest.m_method_name;
-            return *this;
-        }
-        void MethodAccessor::invoke(void* instance) { (std::get<1>(*m_functions))(instance); }
         ArrayAccessor::ArrayAccessor() :
             m_func(nullptr), m_array_type_name("UnKnownType"), m_element_type_name("UnKnownType")
         {}
 
-        ArrayAccessor::ArrayAccessor(ArrayFunctionTuple* array_func) : m_func(array_func)
+        ArrayAccessor::ArrayAccessor(array_function_tuple* array_func) : m_func(array_func)
         {
             m_array_type_name   = k_unknown_type;
             m_element_type_name = k_unknown_type;
@@ -383,4 +313,4 @@ namespace Piccolo
             return *this;
         }
     } // namespace Reflection
-} // namespace Piccolo
+} // namespace Pilot

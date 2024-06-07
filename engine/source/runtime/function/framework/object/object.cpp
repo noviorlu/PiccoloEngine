@@ -1,39 +1,23 @@
 #include "runtime/function/framework/object/object.h"
 
 #include "runtime/engine.h"
-
-#include "runtime/core/meta/reflection/reflection.h"
-
-#include "runtime/resource/asset_manager/asset_manager.h"
-
 #include "runtime/function/framework/component/component.h"
 #include "runtime/function/framework/component/transform/transform_component.h"
-#include "runtime/function/global/global_context.h"
+
+#include "runtime/resource/asset_manager/asset_manager.h"
 
 #include <cassert>
 #include <unordered_set>
 
 #include "_generated/serializer/all_serializer.h"
 
-namespace Piccolo
+namespace Pilot
 {
-    bool shouldComponentTick(std::string component_type_name)
-    {
-        if (g_is_editor_mode)
-        {
-            return g_editor_tick_component_types.find(component_type_name) != g_editor_tick_component_types.end();
-        }
-        else
-        {
-            return true;
-        }
-    }
-
     GObject::~GObject()
     {
         for (auto& component : m_components)
         {
-            PICCOLO_REFLECTION_DELETE(component);
+            PILOT_REFLECTION_DELETE(component);
         }
         m_components.clear();
     }
@@ -42,61 +26,37 @@ namespace Piccolo
     {
         for (auto& component : m_components)
         {
-            if (shouldComponentTick(component.getTypeName()))
+            if (component->m_tick_in_editor_mode == false && g_is_editor_mode)
             {
-                component->tick(delta_time);
+                continue;
             }
+            component->tick(delta_time);
         }
-    }
-
-    bool GObject::hasComponent(const std::string& compenent_type_name) const
-    {
-        for (const auto& component : m_components)
-        {
-            if (component.getTypeName() == compenent_type_name)
-                return true;
-        }
-
-        return false;
     }
 
     bool GObject::load(const ObjectInstanceRes& object_instance_res)
     {
-        // clear old components
-        m_components.clear();
-
         setName(object_instance_res.m_name);
 
-        // load object instanced components
-        m_components = object_instance_res.m_instanced_components;
-        for (auto component : m_components)
-        {
-            if (component)
-            {
-                component->postLoadResource(weak_from_this());
-            }
-        }
+        // load transform component
+        auto transform_component_ptr = PILOT_REFLECTION_NEW(TransformComponent, object_instance_res.m_transform, this);
+        transform_component_ptr->m_tick_in_editor_mode = true;
+        m_components.push_back(transform_component_ptr);
+        m_component_type_names.push_back("TransformComponent");
+
+        // load object instance components
+        TypeNameSet instance_component_type_set;
+        if (loadComponents(object_instance_res.m_instance_components, instance_component_type_set) == false)
+            return false;
 
         // load object definition components
         m_definition_url = object_instance_res.m_definition;
 
         ObjectDefinitionRes definition_res;
+        AssetManager::getInstance().loadAsset(m_definition_url, definition_res);
 
-        const bool is_loaded_success = g_runtime_global_context.m_asset_manager->loadAsset(m_definition_url, definition_res);
-        if (!is_loaded_success)
+        if (loadComponents(definition_res.m_components, instance_component_type_set) == false)
             return false;
-
-        for (auto loaded_component : definition_res.m_components)
-        {
-            const std::string type_name = loaded_component.getTypeName();
-            // don't create component if it has been instanced
-            if (hasComponent(type_name))
-                continue;
-
-            loaded_component->postLoadResource(weak_from_this());
-
-            m_components.push_back(loaded_component);
-        }
 
         return true;
     }
@@ -106,7 +66,51 @@ namespace Piccolo
         out_object_instance_res.m_name       = m_name;
         out_object_instance_res.m_definition = m_definition_url;
 
-        out_object_instance_res.m_instanced_components = m_components;
+        const TransformComponent* transform_conponent = tryGetComponentConst(TransformComponent);
+        out_object_instance_res.m_transform           = transform_conponent->getTransformConst();
     }
 
-} // namespace Piccolo
+    bool GObject::loadComponents(const std::vector<std::string>& components,
+                                 TypeNameSet&                    out_instance_component_type_set)
+    {
+        AssetManager&          asset_manager = AssetManager::getInstance();
+        ComponentDefinitionRes definition_res;
+
+        for (const std::string& definition_res_url : components)
+        {
+            asset_manager.loadAsset(definition_res_url, definition_res);
+            if (loadComponentDefinition(definition_res, false, out_instance_component_type_set) == false)
+                return false;
+        }
+
+        return true;
+    }
+
+    bool GObject::loadComponentDefinition(const ComponentDefinitionRes& component_definition_res,
+                                          const bool                    is_instance_component,
+                                          TypeNameSet&                  out_instance_component_type_set)
+    {
+        AssetManager&          asset_manager = AssetManager::getInstance();
+        ComponentDefinitionRes component_definition;
+
+        if (is_instance_component || out_instance_component_type_set.count(component_definition_res.m_type_name) == 0)
+        {
+            auto&& component_loader = asset_manager.getComponentLoader(component_definition_res.m_type_name);
+            auto&& component        = component_loader(component_definition_res.m_component, this);
+
+            if (component)
+            {
+                m_components.push_back(component);
+                m_component_type_names.push_back(component_definition_res.m_type_name);
+                out_instance_component_type_set.insert(component_definition_res.m_type_name);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+} // namespace Pilot

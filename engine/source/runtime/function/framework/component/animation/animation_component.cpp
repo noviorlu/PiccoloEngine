@@ -3,13 +3,12 @@
 #include "runtime/function/animation/animation_system.h"
 #include "runtime/function/framework/object/object.h"
 
-namespace Piccolo
+namespace Pilot
 {
-    void AnimationComponent::postLoadResource(std::weak_ptr<GObject> parent_object)
+    AnimationComponent::AnimationComponent(const AnimationComponentRes& animation_res, GObject* parent_object) :
+        Component(parent_object), m_animation_res(animation_res)
     {
-        m_parent_object = parent_object;
-
-        auto skeleton_res = AnimationManager::tryLoadSkeleton(m_animation_res.skeleton_file_path);
+        auto skeleton_res = AnimationManager::tryLoadSkeleton(animation_res.skeleton_file_path);
 
         m_skeleton.buildSkeleton(*skeleton_res);
     }
@@ -25,6 +24,4 @@ namespace Piccolo
     }
 
     const AnimationResult& AnimationComponent::getResult() const { return m_animation_res.animation_result; }
-
-    const Skeleton& AnimationComponent::getSkeleton() const { return m_skeleton; }
-} // namespace Piccolo
+} // namespace Pilot

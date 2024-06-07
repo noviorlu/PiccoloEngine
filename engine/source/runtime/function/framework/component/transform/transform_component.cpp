@@ -3,14 +3,14 @@
 #include "runtime/engine.h"
 #include "runtime/function/framework/component/rigidbody/rigidbody_component.h"
 
-namespace Piccolo
+namespace Pilot
 {
-    void TransformComponent::postLoadResource(std::weak_ptr<GObject> parent_gobject)
+    TransformComponent::TransformComponent(const Transform& transform, GObject* parent_gobject) :
+        Component(parent_gobject)
     {
-        m_parent_object       = parent_gobject;
-        m_transform_buffer[0] = m_transform;
-        m_transform_buffer[1] = m_transform;
-        m_is_dirty            = true;
+        m_transform_buffer[0] = transform;
+        m_transform_buffer[1] = transform;
+        m_transform           = transform;
     }
 
     void TransformComponent::setPosition(const Vector3& new_translation)
@@ -25,7 +25,6 @@ namespace Piccolo
         m_transform_buffer[m_next_index].m_scale = new_scale;
         m_transform.m_scale                      = new_scale;
         m_is_dirty                               = true;
-        m_is_scale_dirty                         = true;
     }
 
     void TransformComponent::setRotation(const Quaternion& new_rotation)
@@ -41,8 +40,8 @@ namespace Piccolo
 
         if (m_is_dirty)
         {
-            // update transform component, dirty flag will be reset in mesh component
             tryUpdateRigidBodyComponent();
+            m_is_dirty = false;
         }
 
         if (g_is_editor_mode)
@@ -53,15 +52,11 @@ namespace Piccolo
 
     void TransformComponent::tryUpdateRigidBodyComponent()
     {
-        if (!m_parent_object.lock())
-            return;
-
-        RigidBodyComponent* rigid_body_component = m_parent_object.lock()->tryGetComponent(RigidBodyComponent);
+        RigidBodyComponent* rigid_body_component = m_parent_object->tryGetComponent(RigidBodyComponent);
         if (rigid_body_component)
         {
-            rigid_body_component->updateGlobalTransform(m_transform_buffer[m_current_index], m_is_scale_dirty);
-            m_is_scale_dirty = false;
+            rigid_body_component->updateGlobalTransform(m_transform_buffer[m_current_index]);
         }
     }
 
-} // namespace Piccolo
+} // namespace Pilot
